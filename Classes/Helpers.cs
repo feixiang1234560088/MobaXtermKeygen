@@ -1,4 +1,10 @@
-﻿using System;
+﻿/*
+    @app        : MobaXterm Keygen
+    @repo       : https://github.com/Aetherinox/MobaXtermKeygen
+    @author     : Aetherinox
+*/
+
+using System;
 using System.Linq;
 using System.Text;
 using System.IO;
@@ -8,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Windows.Forms;
 using System.Management.Automation.Runspaces;
+using System.Diagnostics;
 using Lng = MobaXtermKG.Properties.Resources;
 using Cfg = MobaXtermKG.Properties.Settings;
 
@@ -32,9 +39,20 @@ namespace MobaXtermKG
     class Helpers
     {
 
-        readonly string app_base_path           = AppDomain.CurrentDomain.BaseDirectory;
-        private static string patch_launch_dir  = System.IO.Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly( ).Location );
-        private static string app_target_exe    = Cfg.Default.app_mobaxterm_exe;
+        /*
+            Define > Classes
+        */
+
+        private AppInfo AppInfo             = new AppInfo( );
+
+        /*
+            Get filename / paths to currently running patcher
+        */
+
+        private static string patch_launch_fullpath     = Process.GetCurrentProcess( ).MainModule.FileName;
+        private static string patch_launch_dir          = Path.GetDirectoryName( patch_launch_fullpath );
+        private static string patch_launch_exe          = Path.GetFileName( patch_launch_fullpath );
+        private static string app_target_exe            = Cfg.Default.app_mobaxterm_exe;
 
         /*
              StartIsBack Search Locations
@@ -63,7 +81,11 @@ namespace MobaXtermKG
                                                     app_target_exe
                                                 );
 
-        public string FindAppSearchList()
+        /*
+            Get App Search List
+        */
+
+        public string GetAppFindList()
         {
 
             /*
@@ -106,13 +128,13 @@ namespace MobaXtermKG
 
         }
 
-
         /*
             Find App
 
             find target application
 
             A file will be checked in the following order:
+                -   portable exe (keygen in same folder as portable exe)
                 -   Windows Environment Variable PATH
                 -   C:\Program Files
                 -   C:\Program Files (x86)
@@ -127,6 +149,34 @@ namespace MobaXtermKG
         {
 
             /*
+                looks for the portable app, this takes priority in case the user wants to activate the portable version
+            */
+
+            string[] drives         = System.IO.Directory.GetFiles( patch_launch_dir, "*MobaXterm_Personal_*.exe");
+            var i_filesFound        = drives.Count( );
+
+            if ( i_filesFound > 0 )
+            {
+                string found    = drives[0];
+                string dir      = Path.GetDirectoryName( found );
+
+                if ( Directory.Exists( dir ) )
+                {
+
+                    if ( AppInfo.bIsDebug( ) )
+                    {
+                        MessageBox.Show(
+                            string.Format( Lng.msgbox_debug_fpath_msg, app_target_exe, dir ),
+                            string.Format( Lng.msgbox_debug_fpath_title ),
+                            MessageBoxButtons.OK, MessageBoxIcon.None
+                        );
+                    }
+
+                    return found;
+                }
+            }
+
+            /*
                 Check for path inside Windows Environment Variables
             */
 
@@ -136,9 +186,31 @@ namespace MobaXtermKG
             foreach ( String folder in folders )
             {
                 if ( File.Exists( folder + app_target_exe ) )
-                    return folder;
+                {
+                    if ( AppInfo.bIsDebug( ) )
+                    {
+                        MessageBox.Show(
+                            string.Format( Lng.msgbox_debug_fpath_env_c1_msg, app_target_exe, folder ),
+                            string.Format( Lng.msgbox_debug_fpath_env_c1_title ),
+                            MessageBoxButtons.OK, MessageBoxIcon.None
+                        );
+                    }
+
+                    return folder + app_target_exe;
+                }
                 else if ( File.Exists( folder + "\\" + app_target_exe ) )
-                    return folder + "\\";
+                {
+                    if ( AppInfo.bIsDebug( ) )
+                    {
+                        MessageBox.Show(
+                            string.Format( Lng.msgbox_debug_fpath_env_c2_msg, app_target_exe, folder ),
+                            string.Format( Lng.msgbox_debug_fpath_env_c2_title ),
+                            MessageBoxButtons.OK, MessageBoxIcon.None
+                        );
+                    }
+
+                    return folder + "\\" + app_target_exe;
+                }
             }
 
             /*
@@ -149,13 +221,16 @@ namespace MobaXtermKG
             if ( File.Exists( find_InProg64 ) )
             {
 
-                MessageBox.Show(
-                    string.Format( "Found match: {0}\n   {1}", "find_InProg64", find_InProg64 ),
-                    Lng.msgbox_ok_generate_finished_title,
-                    MessageBoxButtons.OK, MessageBoxIcon.None
-                );
+                if ( AppInfo.bIsDebug( ) )
+                {
+                    MessageBox.Show(
+                        string.Format( Lng.msgbox_debug_fpath_msg, app_target_exe, find_InProg64 ),
+                        string.Format( Lng.msgbox_debug_fpath_title ),
+                        MessageBoxButtons.OK, MessageBoxIcon.None
+                    );
+                }
 
-                return Path.GetDirectoryName( find_InProg64 );
+                return find_InProg64;
             }
 
             /*
@@ -165,13 +240,17 @@ namespace MobaXtermKG
 
             if ( File.Exists( find_InProg86 ) )
             {
-                MessageBox.Show(
-                    string.Format( "Found match: {0}\n   {1}", "find_InProg86", find_InProg86 ),
-                    Lng.msgbox_ok_generate_finished_title,
-                    MessageBoxButtons.OK, MessageBoxIcon.None
-                );
 
-                return Path.GetDirectoryName( find_InProg86 );
+                if ( AppInfo.bIsDebug( ) )
+                {
+                    MessageBox.Show(
+                        string.Format( Lng.msgbox_debug_fpath_msg, app_target_exe, find_InProg86 ),
+                        string.Format( Lng.msgbox_debug_fpath_title ),
+                        MessageBoxButtons.OK, MessageBoxIcon.None
+                    );
+                }
+
+                return find_InProg86;
             }
 
             /*
@@ -182,13 +261,16 @@ namespace MobaXtermKG
             if ( File.Exists( find_InAppData ) )
             {
 
-                MessageBox.Show(
-                    string.Format( "Found match: {0}\n   {1}", "find_InAppData", find_InAppData ),
-                    Lng.msgbox_ok_generate_finished_title,
-                    MessageBoxButtons.OK, MessageBoxIcon.None
-                );
+                if ( AppInfo.bIsDebug( ) )
+                {
+                    MessageBox.Show(
+                        string.Format( Lng.msgbox_debug_fpath_msg, app_target_exe, find_InAppData ),
+                        string.Format( Lng.msgbox_debug_fpath_title ),
+                        MessageBoxButtons.OK, MessageBoxIcon.None
+                    );
+                }
 
-                return Path.GetDirectoryName( find_InAppData );
+                return find_InAppData;
             }
 
             /*
@@ -199,20 +281,21 @@ namespace MobaXtermKG
             if ( File.Exists( find_InAppHome ) )
             {
 
-                MessageBox.Show(
-                    string.Format( "Found match: {0}\n   {1}", "find_InAppHome", find_InAppHome ),
-                    Lng.msgbox_ok_generate_finished_title,
-                    MessageBoxButtons.OK, MessageBoxIcon.None
-                );
+                if ( AppInfo.bIsDebug( ) )
+                {
+                    MessageBox.Show(
+                        string.Format( Lng.msgbox_debug_fpath_msg, app_target_exe, find_InAppHome ),
+                        string.Format( Lng.msgbox_debug_fpath_title ),
+                        MessageBoxButtons.OK, MessageBoxIcon.None
+                    );
+                }
 
-                return Path.GetDirectoryName( find_InAppHome );
+                return find_InAppHome;
             }
 
             /*
                 Last Resort
                     Utilize powershell get-command to see if application is installed
-                    Will compile powershell to run the command:
-                        (get-command Application.exe).Path
             */
 
             string ps_query         = "(get-command " + app_target_exe + ").Path";
@@ -227,140 +310,21 @@ namespace MobaXtermKG
 
             if ( File.Exists( target_where ) )
             {
-                return Path.GetDirectoryName( target_where );
+
+                if ( AppInfo.bIsDebug( ) )
+                {
+                    MessageBox.Show(
+                        string.Format( Lng.msgbox_debug_fpath_ps_msg, app_target_exe, target_where ),
+                        string.Format( Lng.msgbox_debug_fpath_ps_title ),
+                        MessageBoxButtons.OK, MessageBoxIcon.None
+                    );
+                }
+
+                return target_where;
             }
 
             return String.Empty;
         }
-
-        # region "FindApp: Deprecated"
-
-        /*
-            Find App
-
-            find MobaXterm application to make it easier on the user when saving
-            the generated key file.
-
-            First we check Windows Environment Variables;
-            then check where we "think" it may be.
-        */
-
-        public string __FindApp_Deprecated( String filename )
-        {
-
-            String default_path64   = @"C:\Program Files\Mobatek\MobaXterm\";
-            String default_path86   = @"C:\Program Files (x86)\Mobatek\MobaXterm\";
-
-            /*
-                this code looks in the base directory of the keygen folder to see if the mobaxterm (portable) exe file exists
-                and opens the folder in explorer.exe
-            */
-
-            string[] drives         = System.IO.Directory.GetFiles(app_base_path, "*mobaxterm*.exe");
-            var i_filesFound        = drives.Count();
-
-            if (i_filesFound > 0)
-            {
-                string found    = drives[ 0 ];
-                string folder   = Path.GetDirectoryName(found);
-
-                if (Directory.Exists(folder))
-                {
-                    return folder;
-                }
-            }
-
-            /*
-                Windows env variables
-            */
-
-            String path         = Environment.GetEnvironmentVariable("path");
-            String[] folders    = path.Split(';');
-
-            foreach (String folder in folders)
-            {
-                if (File.Exists(folder + filename))
-                {
-                    return folder;
-                }
-                else if (File.Exists(folder + @"\" + filename))
-                {
-                    return folder + @"\";
-                }
-            }
-
-            /*
-                Program files 64
-            */
-
-            if (Directory.Exists(default_path64))
-            {
-                if (File.Exists(default_path64 + filename))
-                {
-                    return default_path64;
-                }
-            }
-
-            /*
-                Program files 86
-            */
-
-            if (Directory.Exists(default_path86))
-            {
-                if (File.Exists(default_path86 + filename))
-                {
-                    return default_path86;
-                }
-            }
-
-            /*
-                Utilize powershell get-command to see if mobaxterm is installed
-            */
-
-            string src_targ_exe     = Cfg.Default.app_mobaxterm_exe;
-            string ps_query         = "(get-command " + src_targ_exe + ").Path";
-            string ps_result        = PowershellQ(ps_query);
-            ps_result               = ps_result.Replace(@"\", @"\\").Replace(@"""", @"\""");
-            string where_app        = null;
-
-            using (var reader = new StringReader(ps_result))
-            {
-                where_app = @reader.ReadLine();
-            }
-
-            if (File.Exists(where_app))
-            {
-                return Path.GetDirectoryName(where_app);
-            }
-
-            /*
-                Give the user one last chance to manually define where the program executable is at.
-                If this doesnt work, something has gone wrong or the program is not installed at all.
-            */
-
-            SaveFileDialog dlg      = new SaveFileDialog();
-
-            dlg.FileName            = "Custom";
-            dlg.Title               = "Save License File";
-            dlg.CheckPathExists     = true;
-            dlg.InitialDirectory    = app_base_path;
-            dlg.DefaultExt          = "mxtpro";
-            dlg.Filter              = @"MobaXterm License (*.mxtpro)|*.mxtpro|All files (*.*)|*.*";
-
-            if (dlg.ShowDialog() == DialogResult.OK)
-            {
-                return Path.GetDirectoryName(dlg.FileName);
-            }
-
-            /*
-                folder not found
-                If this happens, something has gone wrong and theres really no recovery.
-            */
-
-            return String.Empty;
-        }
-
-        #endregion
 
         /*
             ProgramFiles directory

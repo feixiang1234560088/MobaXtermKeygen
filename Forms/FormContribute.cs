@@ -101,6 +101,16 @@ namespace MobaXtermKG.Forms
                 this.Close      ( );
             }
 
+            private void btn_Window_Close_MouseEnter( object sender, EventArgs e )
+            {
+                btn_Close.ForeColor = Color.FromArgb( 222, 31, 100 );
+            }
+
+            private void btn_Window_Close_MouseLeave( object sender, EventArgs e )
+            {
+                btn_Close.ForeColor = Color.FromArgb( 255, 255, 255 );
+            }
+
         #endregion
 
         #region "Main Window: Dragging"

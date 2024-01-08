@@ -99,7 +99,7 @@ namespace MobaXtermKG
             this.btn_Close.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(34)))), ((int)(((byte)(34)))));
             this.btn_Close.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btn_Close.Font = new System.Drawing.Font("Segoe MDL2 Assets", 14.25F, System.Drawing.FontStyle.Bold);
-            this.btn_Close.Location = new System.Drawing.Point(492, 7);
+            this.btn_Close.Location = new System.Drawing.Point(490, 7);
             this.btn_Close.Name = "btn_Close";
             this.btn_Close.Size = new System.Drawing.Size(24, 32);
             this.btn_Close.TabIndex = 9;
@@ -157,12 +157,12 @@ namespace MobaXtermKG
             // mnu_Sub_Exit
             // 
             this.mnu_Sub_Exit.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(35)))), ((int)(((byte)(35)))));
-            this.mnu_Sub_Exit.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            this.mnu_Sub_Exit.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.mnu_Sub_Exit.ForeColor = System.Drawing.Color.White;
             this.mnu_Sub_Exit.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.mnu_Sub_Exit.Name = "mnu_Sub_Exit";
             this.mnu_Sub_Exit.Padding = new System.Windows.Forms.Padding(0, 0, 0, 1);
-            this.mnu_Sub_Exit.Size = new System.Drawing.Size(95, 21);
+            this.mnu_Sub_Exit.Size = new System.Drawing.Size(180, 21);
             this.mnu_Sub_Exit.Text = "Exit";
             this.mnu_Sub_Exit.Click += new System.EventHandler(this.mnu_Sub_Exit_Click);
             // 
@@ -191,20 +191,22 @@ namespace MobaXtermKG
             // mnu_Sub_Updates
             // 
             this.mnu_Sub_Updates.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(35)))), ((int)(((byte)(35)))));
-            this.mnu_Sub_Updates.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            this.mnu_Sub_Updates.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.mnu_Sub_Updates.ForeColor = System.Drawing.Color.White;
+            this.mnu_Sub_Updates.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.mnu_Sub_Updates.Name = "mnu_Sub_Updates";
-            this.mnu_Sub_Updates.Size = new System.Drawing.Size(183, 22);
-            this.mnu_Sub_Updates.Text = "Check for Updates";
+            this.mnu_Sub_Updates.Size = new System.Drawing.Size(180, 22);
+            this.mnu_Sub_Updates.Text = "Updates";
             this.mnu_Sub_Updates.Click += new System.EventHandler(this.mnu_Sub_Updates_Click);
+            this.mnu_Sub_Updates.Paint += new System.Windows.Forms.PaintEventHandler(this.mnu_Sub_Updates_Paint);
             // 
             // mnu_Sub_Validate
             // 
             this.mnu_Sub_Validate.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(35)))), ((int)(((byte)(35)))));
-            this.mnu_Sub_Validate.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            this.mnu_Sub_Validate.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.mnu_Sub_Validate.ForeColor = System.Drawing.Color.White;
             this.mnu_Sub_Validate.Name = "mnu_Sub_Validate";
-            this.mnu_Sub_Validate.Size = new System.Drawing.Size(183, 22);
+            this.mnu_Sub_Validate.Size = new System.Drawing.Size(180, 22);
             this.mnu_Sub_Validate.Text = "Validate Signature";
             this.mnu_Sub_Validate.Click += new System.EventHandler(this.mnu_Sub_Validate_Click);
             // 
@@ -215,16 +217,16 @@ namespace MobaXtermKG
             this.mnu_Help_Sep_1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(128)))));
             this.mnu_Help_Sep_1.Name = "mnu_Help_Sep_1";
             this.mnu_Help_Sep_1.Overflow = System.Windows.Forms.ToolStripItemOverflow.Always;
-            this.mnu_Help_Sep_1.Size = new System.Drawing.Size(180, 1);
+            this.mnu_Help_Sep_1.Size = new System.Drawing.Size(177, 1);
             this.mnu_Help_Sep_1.Paint += new System.Windows.Forms.PaintEventHandler(this.mnu_Help_Sep_1_Paint);
             // 
             // mnu_Sub_About
             // 
             this.mnu_Sub_About.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(35)))), ((int)(((byte)(35)))));
-            this.mnu_Sub_About.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            this.mnu_Sub_About.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.mnu_Sub_About.ForeColor = System.Drawing.Color.White;
             this.mnu_Sub_About.Name = "mnu_Sub_About";
-            this.mnu_Sub_About.Size = new System.Drawing.Size(183, 22);
+            this.mnu_Sub_About.Size = new System.Drawing.Size(180, 22);
             this.mnu_Sub_About.Text = "About";
             this.mnu_Sub_About.Click += new System.EventHandler(this.mnu_Sub_About_Click);
             // 
@@ -284,6 +286,9 @@ namespace MobaXtermKG
             this.lbl_HeaderSub.Size = new System.Drawing.Size(51, 17);
             this.lbl_HeaderSub.TabIndex = 34;
             this.lbl_HeaderSub.Text = "Version";
+            this.lbl_HeaderSub.MouseDown += new System.Windows.Forms.MouseEventHandler(this.lbl_HeaderSub_MouseDown);
+            this.lbl_HeaderSub.MouseMove += new System.Windows.Forms.MouseEventHandler(this.lbl_HeaderSub_MouseMove);
+            this.lbl_HeaderSub.MouseUp += new System.Windows.Forms.MouseEventHandler(this.lbl_HeaderSub_MouseUp);
             // 
             // status_Strip
             // 
@@ -335,7 +340,7 @@ namespace MobaXtermKG
             this.aetherxRTextBox1.Cursor = System.Windows.Forms.Cursors.Default;
             this.aetherxRTextBox1.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.aetherxRTextBox1.ForeColor = System.Drawing.Color.White;
-            this.aetherxRTextBox1.Location = new System.Drawing.Point(19, 305);
+            this.aetherxRTextBox1.Location = new System.Drawing.Point(19, 278);
             this.aetherxRTextBox1.Name = "aetherxRTextBox1";
             this.aetherxRTextBox1.ReadOnly = true;
             this.aetherxRTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
@@ -355,7 +360,7 @@ namespace MobaXtermKG
             this.txt_LicenseKey.Enabled = false;
             this.txt_LicenseKey.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.txt_LicenseKey.ForeColor = System.Drawing.Color.White;
-            this.txt_LicenseKey.Location = new System.Drawing.Point(19, 339);
+            this.txt_LicenseKey.Location = new System.Drawing.Point(19, 312);
             this.txt_LicenseKey.Margin = new System.Windows.Forms.Padding(4);
             this.txt_LicenseKey.Multiline = false;
             this.txt_LicenseKey.MultilineScrollbars = true;
@@ -381,7 +386,7 @@ namespace MobaXtermKG
             this.txt_Version.BorderSize = 1;
             this.txt_Version.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.txt_Version.ForeColor = System.Drawing.Color.White;
-            this.txt_Version.Location = new System.Drawing.Point(341, 241);
+            this.txt_Version.Location = new System.Drawing.Point(341, 214);
             this.txt_Version.Margin = new System.Windows.Forms.Padding(4);
             this.txt_Version.Multiline = false;
             this.txt_Version.MultilineScrollbars = true;
@@ -408,7 +413,7 @@ namespace MobaXtermKG
             this.txt_Users.BorderSize = 1;
             this.txt_Users.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.txt_Users.ForeColor = System.Drawing.Color.White;
-            this.txt_Users.Location = new System.Drawing.Point(426, 241);
+            this.txt_Users.Location = new System.Drawing.Point(426, 214);
             this.txt_Users.Margin = new System.Windows.Forms.Padding(4);
             this.txt_Users.Multiline = false;
             this.txt_Users.MultilineScrollbars = true;
@@ -435,7 +440,7 @@ namespace MobaXtermKG
             this.txt_Name.BorderSize = 1;
             this.txt_Name.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.txt_Name.ForeColor = System.Drawing.Color.White;
-            this.txt_Name.Location = new System.Drawing.Point(19, 241);
+            this.txt_Name.Location = new System.Drawing.Point(19, 214);
             this.txt_Name.Margin = new System.Windows.Forms.Padding(4);
             this.txt_Name.Multiline = false;
             this.txt_Name.MultilineScrollbars = true;
@@ -458,7 +463,7 @@ namespace MobaXtermKG
             this.rtxt_Desc.Cursor = System.Windows.Forms.Cursors.Default;
             this.rtxt_Desc.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.rtxt_Desc.ForeColor = System.Drawing.Color.White;
-            this.rtxt_Desc.Location = new System.Drawing.Point(19, 189);
+            this.rtxt_Desc.Location = new System.Drawing.Point(19, 162);
             this.rtxt_Desc.Name = "rtxt_Desc";
             this.rtxt_Desc.ReadOnly = true;
             this.rtxt_Desc.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
@@ -476,7 +481,7 @@ namespace MobaXtermKG
             this.btn_OpenFolder.FlatAppearance.BorderSize = 0;
             this.btn_OpenFolder.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btn_OpenFolder.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btn_OpenFolder.Location = new System.Drawing.Point(249, 394);
+            this.btn_OpenFolder.Location = new System.Drawing.Point(249, 386);
             this.btn_OpenFolder.Name = "btn_OpenFolder";
             this.btn_OpenFolder.Size = new System.Drawing.Size(156, 29);
             this.btn_OpenFolder.TabIndex = 6;
@@ -493,7 +498,7 @@ namespace MobaXtermKG
             this.btn_Generate.FlatAppearance.BorderSize = 0;
             this.btn_Generate.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btn_Generate.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btn_Generate.Location = new System.Drawing.Point(129, 394);
+            this.btn_Generate.Location = new System.Drawing.Point(129, 386);
             this.btn_Generate.Name = "btn_Generate";
             this.btn_Generate.Size = new System.Drawing.Size(111, 29);
             this.btn_Generate.TabIndex = 5;

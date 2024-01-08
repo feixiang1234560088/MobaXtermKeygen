@@ -6,6 +6,9 @@ using System.Drawing;
 using MobaXtermKG.Forms;
 using Lng = MobaXtermKG.Properties.Resources;
 using Cfg = MobaXtermKG.Properties.Settings;
+using System.Net.Http;
+using System.Collections.Generic;
+using System.Web.Script.Serialization;
 
 namespace MobaXtermKG
 {
@@ -19,6 +22,7 @@ namespace MobaXtermKG
                 Define > Classes
             */
 
+            private AppInfo AppInfo         = new AppInfo();
             private Helpers Helpers         = new Helpers();
             readonly private Serial Serial  = new Serial();
 
@@ -40,23 +44,54 @@ namespace MobaXtermKG
             private Point lastLocation;
 
             /*
-                variables > current keygen path / folder
+                Could not find MobaXterm.exe
+
+                patch_launch_fullpath       : Full path to exe
+                patch_launch_dir            : Directory only
+                patch_launch_exe            : Patcher exe filename only
             */
 
-            static private string app_base_path         = AppDomain.CurrentDomain.BaseDirectory;
+            static private string patch_launch_fullpath = Process.GetCurrentProcess( ).MainModule.FileName;
+            static private string patch_launch_dir      = Path.GetDirectoryName( patch_launch_fullpath );
+            static private string patch_launch_exe      = Path.GetFileName( patch_launch_fullpath );
+            static private string app_target_exe        = Cfg.Default.app_mobaxterm_exe;
+
+            /*
+                Define > current keygen path / folder
+            */
 
             static private string app_cli_exe           = Cfg.Default.app_cli_exe;
-            static private string app_cli_path          = Path.Combine( app_base_path, app_cli_exe );
+            static private string app_cli_path          = Path.Combine( patch_launch_dir, app_cli_exe );
 
-            readonly private string cfg_def_version     = Cfg.Default.app_def_version;
-            readonly private string cfg_def_users       = Cfg.Default.app_def_users;
+            static private string cfg_def_version       = Cfg.Default.app_def_version;
+            static private string cfg_def_users         = Cfg.Default.app_def_users;
+
+            /*
+                Define > updates
+            */
+
+            private bool bUpdateAvailable               = false;
+
+            /*
+                Manifest > Json
+            */
+
+            public class Manifest
+            {
+                public string version { get; set; }
+                public string name { get; set; }
+                public string author { get; set; }
+                public string description { get; set; }
+                public string url { get; set; }
+                public IList<string> scripts { get; set; }
+            }
 
         #endregion
 
         #region "Main Window: Initialize"
 
             /*
-                Frame > Parent
+                Form > Parent
             */
 
             public FormParent()
@@ -101,9 +136,9 @@ namespace MobaXtermKG
                     Richtext in body of interface
                 */
 
-                string l1                   = Lng.program_will_generate;
+                string l1                   = Lng.parent_intro_1;
                 string l2                   = Cfg.Default.app_def_mxtpro;
-                string l3                   = Lng.license_file_inside_mobaxterm;
+                string l3                   = Lng.parent_intro_3;
 
                 rtxt_Desc.Text              = "";
 
@@ -130,23 +165,59 @@ namespace MobaXtermKG
 
             private void FormParent_Load( object sender, EventArgs e )
             {
-                mnu_Main.Renderer       = new ToolStripProfessionalRenderer( new mnu_Main_ColorTable( ) );
-                lbl_StatusOutput.Text   = string.Format( Lng.statusbar_genlicense );
-                status_Strip.Refresh    ( );
-            }
+                mnu_Main.Renderer = new ToolStripProfessionalRenderer( new mnu_Main_ColorTable( ) );
+                StatusBar.Update( Lng.status_genlicense );
 
-            /*
-                Tweak to fix frame flickering
-            */
+                /*
+                    update checker > json
+                        views the data stored at https://github.com/Aetherinox/MobaXtermKeygen/blob/master/Manifest/manifest.json
+                */
 
-            protected override CreateParams CreateParams
-            {
-                get
+                using ( var webClient = new System.Net.WebClient( ) )
                 {
-                    CreateParams cp = base.CreateParams;
-                    cp.ExStyle |= 0x02000000;  // enable WS_EX_COMPOSITED
-                    return cp;
+                    var json = webClient.DownloadString( Cfg.Default.app_url_manifest );
+
+                    if( json == null )
+                        return;
+
+                    JavaScriptSerializer serializer     = new JavaScriptSerializer( ); 
+                    Manifest manifest                   = serializer.Deserialize<Manifest>( json );
+
+                    /*
+                        Check if update is available for end-user
+                    */
+
+                    bool bUpdate        = AppInfo.UpdateAvailable( manifest.version );
+                    string ver_curr     = AppInfo.PublishVersion;
+
+                    /*
+                        determines if the update notification appears
+                    */
+
+                    if ( bUpdate || AppInfo.bIsDebug( ) )
+                        bUpdateAvailable = true;
+
+                    /*
+                        update checker
+                    */
+
+                    if ( ( bUpdateAvailable && !Cfg.Default.bShowedUpdates ) )
+                    {
+                        Cfg.Default.bShowedUpdates = true;
+
+                        var result = MessageBox.Show( string.Format( Lng.msgbox_update_msg, manifest.version, Cfg.Default.app_softw_name ),
+                            string.Format( Lng.msgbox_update_title, ver_curr, manifest.version ),
+                            MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation
+                        );
+
+                        string answer   = result.ToString( ).ToLower( );
+
+                        if ( answer == "yes" )
+                            System.Diagnostics.Process.Start( Cfg.Default.app_url_github + "/releases/" );
+                    }
+
                 }
+
             }
 
         #endregion
@@ -507,6 +578,21 @@ namespace MobaXtermKG
             }
 
             /*
+                Top Menu > Updates > Update Indicator
+            */
+
+            private void mnu_Sub_Updates_Paint( object sender, PaintEventArgs e )
+            {
+                if ( bUpdateAvailable )
+                {
+                    var imgSize     = mnu_Sub_Updates.Size;
+                    var bmp         = new Bitmap( Lng.notify_01 );
+
+                    e.Graphics.DrawImage( bmp, 7,  ( imgSize.Height / 2 ) - ( 24 / 2 ), 24, 24 );
+                }
+            }
+
+            /*
                Top Menu > Help > x509 Certificate Validation
             */
 
@@ -609,8 +695,7 @@ namespace MobaXtermKG
 
             private void btn_Generate_MouseEnter( object sender, EventArgs e )
             {
-                lbl_StatusOutput.Text = string.Format(Lng.statusbar_genlicense);
-                status_Strip.Refresh();
+                StatusBar.Update( Lng.status_genlicense );
             }
 
             /*
@@ -629,7 +714,7 @@ namespace MobaXtermKG
                 {
                     MessageBox.Show
                     (
-                        Lng.msgbox_err_generate_noname_msg, Lng.msgbox_err_generate_noname_title,
+                        Lng.msgbox_err_gen_missname_msg, Lng.msgbox_err_gen_missname_title,
                         MessageBoxButtons.OK, MessageBoxIcon.Error
                     );
 
@@ -652,112 +737,75 @@ namespace MobaXtermKG
                     fval_users                  = cfg_def_users;
                 }
 
-
                 /*
-                        Do you wish to generate a new license key for MobaXterm?
+                    Do you wish to generate a new license key for MobaXterm?
                 */
 
-                var result      = MessageBox.Show(
-                                    Lng.msgbox_ok_generate_msg,
-                                    Lng.msgbox_ok_generate_title,
-                                    MessageBoxButtons.YesNo, MessageBoxIcon.Question
-                                );
+                var result      = MessageBox.Show( Lng.msgbox_ok_generate_msg, Lng.msgbox_ok_generate_title, MessageBoxButtons.YesNo, MessageBoxIcon.Question );
+                string answer   = result.ToString( ).ToLower( );
 
-                string answer   = result.ToString( );
+                /*
+                    Dialog Response > NO
+                */
 
-                //  Confirmation - Answer YES
-                if ( answer == "Yes" )
+                if ( String.IsNullOrEmpty( answer ) || answer != "yes" )
                 {
+                    MessageBox.Show
+                    (
+                        string.Format( Lng.msgbox_generate_cancel_msg ),
+                        Lng.msgbox_generate_cancel_title,
+                        MessageBoxButtons.OK, MessageBoxIcon.Error
+                    );
 
-                    string target_exe_where         = Helper.FindApp( );        //  Locate MobaXterm.exe
+                    return;
+                }
 
-                    //  Check if the MobaXterm.exe file path really exists
+                /*
+                    Dialog Response > YES
+                */
 
-                    if ( !String.IsNullOrEmpty( target_exe_where ) && Directory.Exists( target_exe_where ) )
-                    {
+                string target_exe_where         = Helper.FindApp( );        //  Locate MobaXterm.exe
 
-                        string mxtpro_target_to     = target_exe_where + @"\" + Cfg.Default.app_def_mxtpro;
-                        string mxtpro_filename      = Cfg.Default.app_def_mxtpro;
-                        string mxtpro_filename_bak  = target_exe_where + @"\" + Cfg.Default.app_def_mxtpro + ".bak";
+                /*
+                    Location full is empty or directory to save doesnt exist
+                */
 
-                        /*
-                            Look for existing mxtpro file
-                            can either be in:
+                if ( String.IsNullOrEmpty( target_exe_where ) || !File.Exists( target_exe_where ) )
+                {
+                    MessageBox.Show
+                    (
+                        string.Format( Lng.msgbox_err_locate_msg, Cfg.Default.app_mobaxterm_exe, patch_launch_exe, Cfg.Default.app_def_mxtpro ),
+                        Lng.msgbox_err_locate_title,
+                        MessageBoxButtons.OK, MessageBoxIcon.Error
+                    );
 
-                                -> C:\Program Files (x86)\Mobatek\MobaXterm
-                                -> MobaXterm Portable
-                        */
+                    /*
+                        The next series of code will open a Save Dialog and allows the user to pick where the Mxtpro.custom
+                        license file should be saved.
+                    */
 
-                        if ( File.Exists( mxtpro_target_to ) )
-                        {
-                            //  Delete existing .bak
-                            if ( File.Exists( mxtpro_filename_bak ) )
-                                File.Delete( mxtpro_filename_bak );
+                    string licresult_SKDialog       = Serial.SaveKey_Dialog( fval_name, fval_ver, fval_users );
+                    txt_LicenseKey.isPlaceholder    = false;
+                    txt_LicenseKey.Value            = licresult_SKDialog;
 
-                            //  Move new .bak
-                            if ( File.Exists( mxtpro_target_to ) )
-                                File.Move( mxtpro_target_to, mxtpro_filename_bak );
-                        }
+                    return;
+                }
 
-                        /*
-                            Generate new license
-                        */
+                /*
+                    chop full app path + exe into directory only
+                */
 
-                        string app_cli_result = Serial.Generate("& \"" + app_cli_path + "\"" + " -s " + fval_name + " " + fval_ver + " " + fval_users);
+                string src_app_fol                  = Path.GetDirectoryName( target_exe_where );
 
-                        //  Move new Custom.mxtpro from keygen folder to folder where MobaXterm.exe found
-                        if ( File.Exists( mxtpro_filename ) )
-                            File.Move( mxtpro_filename, mxtpro_target_to );
+                if ( Directory.Exists( src_app_fol ) )
+                {
+                    string licresult_SK             = Serial.SaveKey( src_app_fol, fval_name, fval_ver, fval_users );
+                    txt_LicenseKey.isPlaceholder    = false;
+                    txt_LicenseKey.Value            = licresult_SK;
+                }
 
-                        //  Delete the cli exe as we no longer need it
-                        if ( File.Exists( app_cli_exe ) )
-                            File.Delete( app_cli_exe );
+                return;
 
-                        //  New license successfully saved
-                        if ( File.Exists( mxtpro_target_to ) )
-                        {
-
-                            //  Update textbox with new license
-                            txt_LicenseKey.isPlaceholder    = false;
-                            txt_LicenseKey.Value            = app_cli_result;
-
-                            MessageBox.Show(
-                                string.Format( Lng.msgbox_ok_generate_finished_msg, Environment.NewLine, Environment.NewLine, mxtpro_target_to ),
-                                Lng.msgbox_ok_generate_finished_title,
-                                MessageBoxButtons.OK, MessageBoxIcon.None
-                            );
-                        }
-                    }
-                    else
-                    {
-
-                        /*
-                            Could not find MobaXterm.exe
-                        */
-
-                        string app_patcher_exe   =  System.IO.Path.GetFileName( GetType( ).Assembly.Location );
-
-                        MessageBox.Show
-                        (
-                            string.Format( Lng.msgbox_err_locate_msg, Cfg.Default.app_mobaxterm_exe, app_patcher_exe, Cfg.Default.app_def_mxtpro ),
-                            Lng.msgbox_err_locate_title,
-                            MessageBoxButtons.OK, MessageBoxIcon.Error
-                        );
-
-                        /*
-                            The next series of code will open a Save Dialog and allows the user to pick where the Mxtpro.custom
-                            license file should be saved.
-                        */
-
-                        string result_license           = Serial.SaveKeyfile( fval_name, fval_ver, fval_users );
-
-                        /*  Update textbox with new license */
-                        txt_LicenseKey.isPlaceholder    = false;
-                        txt_LicenseKey.Value            = result_license;
-
-                    }
-
-                }// Confirmation: Yes
             }
 
         #endregion
@@ -770,8 +818,7 @@ namespace MobaXtermKG
 
             private void btn_OpenFolder_MouseEnter( object sender, EventArgs e )
             {
-                lbl_StatusOutput.Text = string.Format( Lng.statusbar_btn_openfolder );
-                status_Strip.Refresh( );
+                StatusBar.Update( string.Format( Lng.status_btn_openfolder, app_target_exe ) );
             }
 
             /*
@@ -780,10 +827,11 @@ namespace MobaXtermKG
 
             private void btn_OpenFolder_Click( object sender, EventArgs e )
             {
-                string src_file_path        = Helper.FindApp( );
-                string src_list             = Helper.FindAppSearchList( );
+                string src_app_full_exe     = Helper.FindApp( );
+                string src_list             = Helper.GetAppFindList( );
 
-                if ( String.IsNullOrEmpty( src_file_path ) )
+
+                if ( String.IsNullOrEmpty( src_app_full_exe ) )
                 {
                     MessageBox.Show(
                         string.Format( Lng.msgbox_nolocopen_msg, Cfg.Default.app_mobaxterm_exe, src_list ),
@@ -796,18 +844,26 @@ namespace MobaXtermKG
                 }
 
                 /*
-                    target directory
+                    chop full app path + exe into directory only
                 */
 
-                if ( Directory.Exists( src_file_path ) )
-                    Process.Start( "explorer.exe", src_file_path );
+                string src_app_fol = Path.GetDirectoryName( src_app_full_exe );
 
                 /*
-                    cannot locate mobaxterm program. Open dialog in Program Files(86)
+                    make sure file and folder exist and open folder
                 */
 
+                if ( File.Exists( src_app_full_exe ) && Directory.Exists( src_app_fol ) )
+                {
+                    Process.Start( "explorer.exe", src_app_fol );
+                }
                 else
                 {
+
+                    /*
+                        cannot locate mobaxterm program. Open dialog in Program Files(86)
+                    */
+
                     string path_progfiles = Helpers.ProgramFiles( );
                     Process.Start( "explorer.exe", path_progfiles );
 
@@ -830,8 +886,7 @@ namespace MobaXtermKG
 
             private void txt_Name_MouseEnter( object sender, EventArgs e )
             {
-                lbl_StatusOutput.Text = string.Format( Lng.statusbar_txt_name_mouseover );
-                status_Strip.Refresh( );
+                StatusBar.Update( Lng.status_txt_name_mouseover );
             }
 
             /*
@@ -840,8 +895,7 @@ namespace MobaXtermKG
 
             private void txt_Users_MouseEnter( object sender, EventArgs e )
             {
-                lbl_StatusOutput.Text = string.Format( Lng.statusbar_txt_users_mouseover + " " + Cfg.Default.app_def_users );
-                status_Strip.Refresh();
+                StatusBar.Update( string.Format( "{0} {1}", Lng.status_txt_users_mouseover, Cfg.Default.app_def_users ) );
             }
 
             /*
@@ -850,8 +904,7 @@ namespace MobaXtermKG
 
             private void txt_Version_MouseEnter( object sender, EventArgs e )
             {
-                lbl_StatusOutput.Text = string.Format( Lng.statusbar_txt_version_mouseover + " " + Cfg.Default.app_def_version );
-                status_Strip.Refresh();
+                StatusBar.Update( string.Format( "{0} {1}", Lng.status_txt_version_mouseover, Cfg.Default.app_def_version ) );
             }
 
         #endregion
@@ -889,10 +942,6 @@ namespace MobaXtermKG
                         base.OnRenderToolStripBorder( e );
                 }
             }
-
-            /*
-                Statusbar > Paint
-            */
 
             private void status_Strip_Paint( object sender, PaintEventArgs e )
             {
@@ -933,6 +982,7 @@ namespace MobaXtermKG
             public void Status( string message )
             {
                 lbl_StatusOutput.Text = message;
+                status_Strip.Refresh( );
             }
 
         #endregion
